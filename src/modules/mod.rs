@@ -1,0 +1,9 @@
+pub mod auth;
+pub mod booking;
+pub mod crm;
+pub mod erp;
+pub mod finance;
+pub mod pos;
+pub mod public;
+pub mod resto;
+pub mod tenant;

@@ -3,34 +3,32 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct BusinessType {
-    pub id: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub icon: Option<String>,
-    pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct BookingResource {
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct ResourceDto {
     pub id: Uuid,
-    pub business_type_id: String,
     pub name: String,
     pub category: String,
     pub hourly_rate: f64,
     pub capacity: i32,
     pub description: Option<String>,
     pub is_active: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct Booking {
+#[derive(Debug, Deserialize)]
+pub struct CreateResourceRequest {
+    pub name: String,
+    pub category: String,
+    pub hourly_rate: f64,
+    pub capacity: i32,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ReservationDto {
     pub id: Uuid,
+    pub code: String,
     pub resource_id: Uuid,
-    pub booking_code: String,
+    pub resource_name: String,
     pub customer_name: String,
     pub customer_phone: String,
     pub customer_email: Option<String>,
@@ -39,16 +37,15 @@ pub struct Booking {
     pub duration_hours: f64,
     pub total_amount: f64,
     pub down_payment: f64,
-    pub booking_status: String,
+    pub status: String,
     pub payment_status: String,
     pub payment_method: Option<String>,
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateBookingRequest {
+pub struct CreateReservationRequest {
     pub resource_id: Uuid,
     pub customer_name: String,
     pub customer_phone: String,
@@ -61,7 +58,17 @@ pub struct CreateBookingRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateBookingStatusRequest {
-    pub booking_status: Option<String>,
+pub struct UpdateReservationRequest {
+    pub status: Option<String>,
+    #[allow(dead_code)]
     pub payment_status: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BookingStatsDto {
+    pub revenue_today: f64,
+    pub reservations_today: i64,
+    pub occupancy_pct: f64,
+    pub upcoming_count: i64,
+    pub pending_payment_count: i64,
 }

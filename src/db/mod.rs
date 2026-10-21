@@ -1,9 +1,13 @@
+pub mod migrations;
+
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
+use tracing::info;
+
 use crate::error::AppError;
 
 pub async fn create_pool(database_url: &str) -> Result<PgPool, AppError> {
-    tracing::info!("Initializing PostgreSQL connection pool to Neon database...");
+    info!("Initializing connection pool to Neon PostgreSQL...");
 
     let pool = PgPoolOptions::new()
         .max_connections(15)
@@ -14,26 +18,14 @@ pub async fn create_pool(database_url: &str) -> Result<PgPool, AppError> {
         .connect(database_url)
         .await
         .map_err(|e| {
-            tracing::error!("Failed to connect to Neon PostgreSQL: {}", e);
+            tracing::error!("Neon PostgreSQL connection error: {}", e);
             AppError::DatabaseError(e)
         })?;
 
-    tracing::info!("Successfully connected to Neon PostgreSQL pool.");
+    info!("Connected to Neon PostgreSQL successfully.");
     Ok(pool)
 }
 
 pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
-    tracing::info!("Running database schema initialization and seed checks...");
-
-    let schema_sql = include_str!("schema.sql");
-    sqlx::raw_sql(schema_sql)
-        .execute(pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to execute schema migrations: {}", e);
-            AppError::DatabaseError(e)
-        })?;
-
-    tracing::info!("Database schema and seed data are ready.");
-    Ok(())
+    migrations::run_migrations(pool).await
 }
