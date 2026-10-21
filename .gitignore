@@ -1,0 +1,8 @@
+/target
+**/*.rs.bk
+*.bk
+.env
+.env.*
+!.env.example
+*.pdb
+*.exe
