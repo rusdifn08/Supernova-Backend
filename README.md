@@ -12,19 +12,20 @@ A robust, secure, and asynchronous backend engine designed to power Supernova La
 ## 🛠️ Technology Stack & Architecture
 
 - **Language:** Rust 1.80+ (2021 Edition)
-- **HTTP Web Framework:** [Axum 0.7](https://github.com/tokio-rs/axum)
-- **Async Runtime:** [Tokio](https://tokio.rs/) (Multi-threaded Work-Stealing)
+- **HTTP Web Framework:** [Axum 0.8](https://github.com/tokio-rs/axum) (Modern `{capture}` URI routing syntax)
+- **Async Runtime:** [Tokio 1.54](https://tokio.rs/) (Multi-threaded Work-Stealing)
 - **Database Engine:** [PostgreSQL (Neon Serverless Cloud)](https://neon.tech/)
-- **Database Driver:** [SQLx 0.8](https://github.com/launchbadge/sqlx) (Pure async, TLS Rustls, Parameterized Query Engine)
+- **Database Driver:** [SQLx 0.9](https://github.com/launchbadge/sqlx) (Pure async, TLS Rustls Ring, Parameterized Query Engine with `SqlSafeStr` static injection prevention)
 - **Serialization:** Serde & Serde JSON
-- **Middleware:** Tower & Tower-HTTP (Trace, CORS, Timeout)
+- **Middleware:** Tower 0.5 & Tower-HTTP 0.7 (Trace, CORS, Timeout)
+- **Error Handling:** ThisError 2.0
 - **Logging & Telemetry:** Tracing & Tracing-Subscriber
 
 ---
 
 ## 🔒 Security & Robustness Highlights
 
-1. **SQL Injection Immune:** 100% of database interactions are built using SQLx parameterized statements (`$1`, `$2`, ...). No dynamic raw string interpolation into SQL queries.
+1. **SQL Injection Immune:** 100% of database interactions are built using SQLx parameterized statements (`$1`, `$2`, ...) and strictly conform to compile-time `SqlSafeStr` safety bounds. No dynamic raw string interpolation into SQL queries.
 2. **Atomic ACID Transactions:** POS order checkouts, inventory stock deduction, and dine-in kitchen tickets execute inside dedicated database transactions (`pool.begin() ... tx.commit()`) with row-level locking (`FOR UPDATE`) to prevent race conditions.
 3. **Conflict & Overlap Prevention:** The Booking Engine performs real-time timestamp collision detection (`start_time < existing.end_time AND end_time > existing.start_time`) to prevent double-booking.
 4. **Safe Error Masking:** Database connection strings, credentials, and internal stack traces are caught by `AppError` and logged via `tracing::error!` on the server side, returning clean, non-leaking JSON error envelopes to clients with proper HTTP status codes.
@@ -35,9 +36,9 @@ A robust, secure, and asynchronous backend engine designed to power Supernova La
 ## 🚀 Getting Started
 
 ### 1. Environment Configuration
-Create a `.env` file in the root directory (already preconfigured):
+Create a `.env` file in the root directory (refer to `.env.example`):
 ```env
-DATABASE_URL=postgresql://neondb_owner:npg_xJtM0Y7AFvBw@ep-rough-credit-a1xtzvbz-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://neondb_owner:YOUR_PASSWORD@ep-rough-credit-a1xtzvbz-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 SERVER_HOST=0.0.0.0
 SERVER_PORT=8088
 RUST_LOG=info,supernova_backend=debug,tower_http=info

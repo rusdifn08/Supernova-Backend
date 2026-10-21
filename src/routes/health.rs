@@ -16,8 +16,8 @@ pub async fn health_check(State(pool): State<PgPool>) -> Result<Json<Value>, App
     Ok(Json(json!({
         "status": "healthy",
         "service": "Supernova Labs Studio Backend Engine",
-        "version": "1.0.0",
-        "framework": "Rust / Axum 0.7",
+        "version": "1.1.0",
+        "framework": "Rust / Axum 0.8 & SQLx 0.9",
         "database": "Neon Serverless PostgreSQL (ap-southeast-1)",
         "security": {
             "parameterized_queries": true,

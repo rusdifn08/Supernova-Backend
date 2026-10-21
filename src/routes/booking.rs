@@ -178,19 +178,23 @@ pub async fn update_booking_status(
     Path(id): Path<Uuid>,
     Json(payload): Json<UpdateBookingStatusRequest>,
 ) -> Result<Json<Value>, AppError> {
-    let mut query = String::from("UPDATE bookings SET updated_at = NOW()");
-    if let Some(ref status) = payload.booking_status {
-        query.push_str(&format!(", booking_status = '{}'", status.replace('\'', "''")));
-    }
-    if let Some(ref payment) = payload.payment_status {
-        query.push_str(&format!(", payment_status = '{}'", payment.replace('\'', "''")));
-    }
-    query.push_str(&format!(" WHERE id = '{}' RETURNING booking_code, booking_status, payment_status", id));
-
-    let row = sqlx::query(&query)
-        .fetch_optional(&pool)
-        .await?
-        .ok_or_else(|| AppError::NotFound("Data booking tidak ditemukan.".to_string()))?;
+    let row = sqlx::query(
+        r#"
+        UPDATE bookings 
+        SET 
+            booking_status = COALESCE($1, booking_status),
+            payment_status = COALESCE($2, payment_status),
+            updated_at = NOW()
+        WHERE id = $3
+        RETURNING booking_code, booking_status, payment_status
+        "#,
+    )
+    .bind(payload.booking_status)
+    .bind(payload.payment_status)
+    .bind(id)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("Data booking tidak ditemukan.".to_string()))?;
 
     use sqlx::Row;
     let code: String = row.get("booking_code");
