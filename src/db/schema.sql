@@ -262,6 +262,29 @@ CREATE TABLE IF NOT EXISTS trial_inquiries (
 );
 
 -- =============================================================================
+-- DOMAIN 5: BUSINESS USER AUTHENTICATION & 1-MONTH TRIAL SERVICE ACCESS
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS business_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    business_name VARCHAR(150) NOT NULL,
+    business_type VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(40) NOT NULL,
+    city VARCHAR(100) DEFAULT 'Indonesia',
+    service_plan VARCHAR(50) NOT NULL DEFAULT 'trial_1_month',
+    trial_starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    trial_expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days'),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_business_users_email ON business_users (email);
+
+-- =============================================================================
 -- SEED DATA (INITIAL SETUP FOR IMMEDIATE OUT-OF-THE-BOX USE)
 -- =============================================================================
 
@@ -331,3 +354,22 @@ INSERT INTO resto_menu_items (id, category_id, name, description, price, availab
     ('eeee2222-2222-2222-2222-222222222222', 'beverage', 'Iced Peach Tea Yakult', 'Teh peach harum berpadu dengan probiotik Yakult segar dan popping boba peach.', 28000.00, '[{"name": "Gula", "options": ["Normal Sugar", "Less Sugar", "No Sugar"]}, {"name": "Es", "options": ["Normal Ice", "Less Ice"]}]'::jsonb),
     ('eeee3333-3333-3333-3333-333333333333', 'appetizer', 'Truffle Parmesan Fries', 'Kentang goreng renyah dibalut minyak truffle putih premium dan keju parmesan parut segar.', 36000.00, '[]'::jsonb)
 ON CONFLICT DO NOTHING;
+
+-- Seed Sample Business User (1-Month Real Trial Active)
+INSERT INTO business_users (
+    id, email, password_hash, full_name, business_name, business_type, phone_number, city,
+    service_plan, trial_starts_at, trial_expires_at, is_active
+) VALUES (
+    '99999999-9999-9999-9999-999999999999',
+    'owner@supernovasports.id',
+    'ef51a37c449339739502b48981467493e81a32a6a57519cf2e259e86ba6f98ef',
+    'Rahmat Hidayat',
+    'Supernova Arena Sports & Studio',
+    'sports',
+    '081234567890',
+    'Jakarta Selatan',
+    'trial_1_month',
+    NOW(),
+    NOW() + INTERVAL '30 days',
+    TRUE
+) ON CONFLICT (email) DO NOTHING;

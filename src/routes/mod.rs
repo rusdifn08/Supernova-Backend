@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod booking;
 pub mod health;
 pub mod pos_erp;

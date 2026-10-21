@@ -23,6 +23,13 @@ pub enum AppError {
     #[error("Bad request: {0}")]
     BadRequest(String),
 
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
+    #[allow(dead_code)]
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
     #[allow(dead_code)]
     #[error("Internal server error")]
     InternalError(String),
@@ -35,6 +42,8 @@ impl IntoResponse for AppError {
             AppError::ValidationError(msg) => (StatusCode::BAD_REQUEST, msg.clone(), "VALIDATION_FAILED"),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone(), "SLOT_CONFLICT"),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone(), "BAD_REQUEST"),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg.clone(), "UNAUTHORIZED"),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone(), "FORBIDDEN"),
             AppError::DatabaseError(err) => {
                 tracing::error!("Internal SQLx Database Error: {:?}", err);
                 (

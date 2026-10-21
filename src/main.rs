@@ -60,12 +60,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Health Checks
         .route("/health", get(routes::health::health_check))
         .route("/api/v1/health", get(routes::health::health_check))
+        // Domain 0: Business User Auth & 1-Month Trial Subscription
+        .route("/api/v1/auth/register", post(routes::auth::register))
+        .route("/api/v1/auth/login", post(routes::auth::login))
+        .route("/api/v1/auth/me", get(routes::auth::me))
         // Domain 1: Booking System
         .route("/api/v1/booking/types", get(routes::booking::get_business_types))
-        .route("/api/v1/booking/resources", get(routes::booking::get_resources))
+        .route("/api/v1/booking/resources", get(routes::booking::get_resources).post(routes::booking::create_resource))
         .route("/api/v1/booking/reserve", post(routes::booking::create_booking))
         .route("/api/v1/booking/reservations", get(routes::booking::list_bookings))
         .route("/api/v1/booking/reservations/{id}/status", patch(routes::booking::update_booking_status))
+        .route("/api/v1/booking/reservations/{id}/cancel", post(routes::booking::cancel_booking))
         .route("/api/v1/booking/verify/{code}", get(routes::booking::verify_booking_by_code))
         // Domain 2: POS, ERP, CRM & Keuangan
         .route("/api/v1/pos/products", get(routes::pos_erp::get_products))

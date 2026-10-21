@@ -246,3 +246,74 @@ pub async fn verify_booking_by_code(
         "verified_at": chrono::Utc::now()
     })))
 }
+
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateResourceRequest {
+    pub business_type_id: String,
+    pub name: String,
+    pub category: String,
+    pub hourly_rate: f64,
+    pub capacity: Option<i32>,
+    pub description: Option<String>,
+}
+
+// 7. Add Custom Business Resource / Facility
+pub async fn create_resource(
+    State(pool): State<PgPool>,
+    Json(payload): Json<CreateResourceRequest>,
+) -> Result<Json<Value>, AppError> {
+    if payload.name.trim().is_empty() {
+        return Err(AppError::ValidationError("Nama fasilitas/unit tidak boleh kosong.".to_string()));
+    }
+    let id = Uuid::new_v4();
+    let capacity = payload.capacity.unwrap_or(1);
+
+    sqlx::query(
+        r#"
+        INSERT INTO booking_resources (id, business_type_id, name, category, hourly_rate, capacity, description)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        "#
+    )
+    .bind(id)
+    .bind(&payload.business_type_id)
+    .bind(&payload.name)
+    .bind(&payload.category)
+    .bind(payload.hourly_rate)
+    .bind(capacity)
+    .bind(&payload.description)
+    .execute(&pool)
+    .await?;
+
+    Ok(Json(json!({
+        "success": true,
+        "message": "Fasilitas baru berhasil disimpan ke sistem Anda!",
+        "resource": {
+            "id": id,
+            "name": payload.name,
+            "category": payload.category,
+            "hourly_rate": payload.hourly_rate
+        }
+    })))
+}
+
+// 8. Cancel Booking
+pub async fn cancel_booking(
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    let rows = sqlx::query("UPDATE bookings SET booking_status = 'cancelled', updated_at = NOW() WHERE id = $1 RETURNING booking_code")
+        .bind(id)
+        .fetch_optional(&pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Booking tidak ditemukan.".to_string()))?;
+
+    use sqlx::Row;
+    let code: String = rows.get("booking_code");
+
+    Ok(Json(json!({
+        "success": true,
+        "message": format!("Booking {} berhasil dibatalkan.", code),
+        "booking_code": code
+    })))
+}
+
