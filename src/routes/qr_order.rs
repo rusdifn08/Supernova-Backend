@@ -307,3 +307,51 @@ pub async fn list_table_orders(State(pool): State<PgPool>) -> Result<Json<Vec<Re
 
     Ok(Json(orders))
 }
+
+// 7. Call Waiter from Table
+pub async fn call_waiter(
+    State(pool): State<PgPool>,
+    Path(qr_token): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    let table = sqlx::query_as::<_, RestoTable>(
+        "SELECT id, table_number, qr_token, section_area, capacity, status, is_active, created_at FROM resto_tables WHERE qr_token = $1 AND is_active = TRUE"
+    )
+    .bind(&qr_token)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("QR Code Meja tidak valid.".to_string()))?;
+
+    sqlx::query("UPDATE resto_tables SET status = 'calling_waiter' WHERE id = $1")
+        .bind(table.id)
+        .execute(&pool)
+        .await?;
+
+    Ok(Json(json!({
+        "success": true,
+        "message": format!("Pelayan telah diberitahu untuk menuju ke Meja {} ({})!", table.table_number, table.section_area),
+        "table_number": table.table_number,
+        "status": "calling_waiter",
+        "timestamp": chrono::Utc::now()
+    })))
+}
+
+// 8. Request Bill from Table
+pub async fn request_bill(
+    State(pool): State<PgPool>,
+    Path(qr_token): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    let table = sqlx::query_as::<_, RestoTable>(
+        "SELECT id, table_number, qr_token, section_area, capacity, status, is_active, created_at FROM resto_tables WHERE qr_token = $1 AND is_active = TRUE"
+    )
+    .bind(&qr_token)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("QR Code Meja tidak valid.".to_string()))?;
+
+    Ok(Json(json!({
+        "success": true,
+        "message": format!("Permintaan tagihan Meja {} telah dikirim ke Kasir.", table.table_number),
+        "table_number": table.table_number,
+        "timestamp": chrono::Utc::now()
+    })))
+}

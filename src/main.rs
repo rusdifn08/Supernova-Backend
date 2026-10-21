@@ -66,14 +66,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/v1/booking/reserve", post(routes::booking::create_booking))
         .route("/api/v1/booking/reservations", get(routes::booking::list_bookings))
         .route("/api/v1/booking/reservations/{id}/status", patch(routes::booking::update_booking_status))
+        .route("/api/v1/booking/verify/{code}", get(routes::booking::verify_booking_by_code))
         // Domain 2: POS, ERP, CRM & Keuangan
         .route("/api/v1/pos/products", get(routes::pos_erp::get_products))
         .route("/api/v1/pos/orders", post(routes::pos_erp::create_pos_order).get(routes::pos_erp::list_pos_orders))
         .route("/api/v1/crm/customers", get(routes::pos_erp::get_customers))
         .route("/api/v1/erp/employees", get(routes::pos_erp::get_employees))
+        .route("/api/v1/erp/inventory/logs", get(routes::pos_erp::get_inventory_logs))
         .route("/api/v1/finance/summary", get(routes::pos_erp::get_finance_summary))
         // Domain 3: Ordering in Table with QR Code
         .route("/api/v1/qr-order/table/{qr_token}", get(routes::qr_order::scan_table_qr))
+        .route("/api/v1/qr-order/table/{qr_token}/call-waiter", post(routes::qr_order::call_waiter))
+        .route("/api/v1/qr-order/table/{qr_token}/request-bill", post(routes::qr_order::request_bill))
         .route("/api/v1/qr-order/order", post(routes::qr_order::place_table_order))
         .route("/api/v1/qr-order/kitchen-orders", get(routes::qr_order::get_kitchen_orders))
         .route("/api/v1/qr-order/orders/{id}/status", patch(routes::qr_order::update_order_status))

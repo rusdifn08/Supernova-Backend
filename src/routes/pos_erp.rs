@@ -297,3 +297,40 @@ pub async fn get_finance_summary(State(pool): State<PgPool>) -> Result<Json<Fina
         active_employees_count: active_emp_count,
     }))
 }
+
+// 6. Get Inventory Audit Logs
+pub async fn get_inventory_logs(
+    State(pool): State<PgPool>,
+) -> Result<Json<Value>, AppError> {
+    let rows = sqlx::query(
+        r#"
+        SELECT l.id, l.product_id, p.name as product_name, l.change_type,
+               l.quantity_changed, l.previous_stock, l.new_stock, l.notes, l.created_at
+        FROM erp_inventory_logs l
+        JOIN erp_products p ON p.id = l.product_id
+        ORDER BY l.created_at DESC
+        LIMIT 50
+        "#,
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    use sqlx::Row;
+    let logs: Vec<Value> = rows.into_iter().map(|r| {
+        json!({
+            "id": r.get::<Uuid, _>("id"),
+            "product_name": r.get::<String, _>("product_name"),
+            "change_type": r.get::<String, _>("change_type"),
+            "quantity_changed": r.get::<i32, _>("quantity_changed"),
+            "previous_stock": r.get::<i32, _>("previous_stock"),
+            "new_stock": r.get::<i32, _>("new_stock"),
+            "notes": r.get::<Option<String>, _>("notes"),
+            "created_at": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at"),
+        })
+    }).collect();
+
+    Ok(Json(json!({
+        "success": true,
+        "logs": logs
+    })))
+}

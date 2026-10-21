@@ -208,3 +208,41 @@ pub async fn update_booking_status(
         "payment_status": p_status
     })))
 }
+
+// 6. Verify Booking by Code (for E-Ticket scan & client verification)
+pub async fn verify_booking_by_code(
+    State(pool): State<PgPool>,
+    Path(code): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    let booking = sqlx::query_as::<_, Booking>(
+        r#"
+        SELECT id, resource_id, booking_code, customer_name, customer_phone, customer_email,
+               start_time, end_time, duration_hours::FLOAT8, total_amount::FLOAT8, down_payment::FLOAT8,
+               booking_status, payment_status, payment_method, notes, created_at, updated_at
+        FROM bookings
+        WHERE UPPER(booking_code) = UPPER($1)
+        "#,
+    )
+    .bind(code.trim())
+    .fetch_optional(&pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Tiket booking dengan kode '{}' tidak ditemukan.", code)))?;
+
+    let resource_row = sqlx::query(
+        "SELECT name, category FROM booking_resources WHERE id = $1"
+    )
+    .bind(booking.resource_id)
+    .fetch_optional(&pool)
+    .await?;
+
+    use sqlx::Row;
+    let resource_name = resource_row.as_ref().map(|r| r.get::<String, _>("name")).unwrap_or_else(|| "Fasilitas".to_string());
+
+    Ok(Json(json!({
+        "success": true,
+        "booking": booking,
+        "facility_name": resource_name,
+        "is_valid": booking.booking_status != "cancelled",
+        "verified_at": chrono::Utc::now()
+    })))
+}
