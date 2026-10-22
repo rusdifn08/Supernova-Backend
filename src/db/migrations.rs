@@ -42,9 +42,12 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
         -- Add tenant_id to domain tables if not present
         ALTER TABLE booking_resources ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
         ALTER TABLE bookings ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+        ALTER TABLE bookings ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'confirmed';
+        ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booking_date DATE DEFAULT CURRENT_DATE;
         ALTER TABLE pos_outlets ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
         ALTER TABLE erp_categories ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
         ALTER TABLE erp_products ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
+        ALTER TABLE erp_products ADD COLUMN IF NOT EXISTS stock INT DEFAULT 10;
         ALTER TABLE erp_inventory_logs ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
         ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);
         ALTER TABLE erp_employees ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id);

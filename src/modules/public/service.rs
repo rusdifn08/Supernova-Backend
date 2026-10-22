@@ -43,7 +43,7 @@ impl PublicService {
 
         let resources = sqlx::query_as::<_, (Uuid, String, String, f64, i32)>(
             r#"
-            SELECT id, name, category, hourly_price::FLOAT8, capacity
+            SELECT id, name, category, hourly_rate::FLOAT8 AS hourly_price, capacity
             FROM booking_resources
             WHERE tenant_id = $1 AND is_active = TRUE
             ORDER BY name ASC
@@ -58,7 +58,7 @@ impl PublicService {
         for (id, name, category, hourly_price, capacity) in resources {
             let booked = sqlx::query_as::<_, (chrono::NaiveTime, chrono::NaiveTime)>(
                 r#"
-                SELECT start_time, end_time
+                SELECT start_time::TIME, end_time::TIME
                 FROM bookings
                 WHERE resource_id = $1 AND booking_date = $2 AND status NOT IN ('cancelled')
                 ORDER BY start_time ASC
@@ -104,7 +104,7 @@ impl PublicService {
 
         // Fetch resource
         let (res_name, hourly_price): (String, f64) = sqlx::query_as(
-            "SELECT name, hourly_price::FLOAT8 FROM booking_resources WHERE id = $1 AND tenant_id = $2 AND is_active = TRUE",
+            "SELECT name, hourly_rate::FLOAT8 AS hourly_price FROM booking_resources WHERE id = $1 AND tenant_id = $2 AND is_active = TRUE",
         )
         .bind(req.resource_id)
         .bind(tenant_id)
@@ -189,10 +189,10 @@ impl PublicService {
 
         let rows = sqlx::query_as::<_, (Uuid, String, String, String, f64, i32)>(
             r#"
-            SELECT p.id, p.name, p.sku, COALESCE(c.name, 'Umum'), p.sell_price::FLOAT8, p.stock
+            SELECT p.id, p.name, p.sku, COALESCE(c.name, 'Umum'), p.sell_price::FLOAT8, p.stock_quantity AS stock
             FROM erp_products p
             LEFT JOIN erp_categories c ON c.id = p.category_id
-            WHERE p.tenant_id = $1 AND p.is_active = TRUE AND p.stock > 0
+            WHERE p.tenant_id = $1 AND p.is_active = TRUE AND p.stock_quantity > 0
             ORDER BY p.name ASC
             "#,
         )

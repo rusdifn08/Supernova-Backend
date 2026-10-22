@@ -34,7 +34,7 @@ struct ReservationRow {
 pub async fn list_resources(pool: &PgPool, tenant_id: Uuid) -> Result<Vec<ResourceDto>, AppError> {
     let rows = sqlx::query_as::<_, ResourceDto>(
         r#"
-        SELECT id, name, category, hourly_price::FLOAT8 as hourly_rate, capacity, description, is_active
+        SELECT id, name, category, hourly_rate::FLOAT8 as hourly_rate, capacity, description, is_active
         FROM booking_resources
         WHERE tenant_id = $1 AND is_active = TRUE
         ORDER BY name ASC
@@ -59,9 +59,9 @@ pub async fn create_resource(
     let id = Uuid::new_v4();
     let row = sqlx::query_as::<_, ResourceDto>(
         r#"
-        INSERT INTO booking_resources (id, tenant_id, business_type_id, name, category, hourly_price, capacity, description, is_active)
+        INSERT INTO booking_resources (id, tenant_id, business_type_id, name, category, hourly_rate, capacity, description, is_active)
         VALUES ($1, $2, 'custom', $3, $4, $5, $6, $7, TRUE)
-        RETURNING id, name, category, hourly_price::FLOAT8 as hourly_rate, capacity, description, is_active
+        RETURNING id, name, category, hourly_rate::FLOAT8 as hourly_rate, capacity, description, is_active
         "#,
     )
     .bind(id)
@@ -132,7 +132,7 @@ pub async fn create_reservation(
     }
 
     let (res_name, hourly_rate) = sqlx::query_as::<_, (String, f64)>(
-        "SELECT name, hourly_price::FLOAT8 FROM booking_resources WHERE id = $1 AND tenant_id = $2 AND is_active = TRUE",
+        "SELECT name, hourly_rate::FLOAT8 FROM booking_resources WHERE id = $1 AND tenant_id = $2 AND is_active = TRUE",
     )
     .bind(req.resource_id)
     .bind(tenant_id)
